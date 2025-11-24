@@ -1,4 +1,5 @@
 import { pool } from './connection.js';
+import bcrypt from 'bcryptjs';
 
 const createTableSQL = `
   CREATE TABLE IF NOT EXISTS users (
@@ -59,12 +60,15 @@ export async function initializeDatabase() {
     console.log('Initializing database...');
     await client.query(createTableSQL);
 
+    // Hash the default admin password
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
     // Insert default admin user if not exists
     await client.query(`
       INSERT INTO users (username, password, email, full_name)
-      VALUES ('admin', 'admin123', 'admin@example.com', 'Administrator')
+      VALUES ('admin', $1, 'admin@example.com', 'Administrator')
       ON CONFLICT (username) DO NOTHING;
-    `);
+    `, [hashedPassword]);
 
     console.log('✓ Database initialized successfully');
     return true;

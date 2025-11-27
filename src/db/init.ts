@@ -1,5 +1,5 @@
 import { pool } from './connection.js';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcrypt';
 
 const createTableSQL = `
   CREATE TABLE IF NOT EXISTS users (

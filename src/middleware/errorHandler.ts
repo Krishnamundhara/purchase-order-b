@@ -14,7 +14,7 @@ export interface ApiError extends ApiResponse {
 }
 
 export const errorHandler = (
-  err: Error | ZodError,
+  err: any,
   req: Request,
   res: Response,
   next: NextFunction
@@ -35,7 +35,7 @@ export const errorHandler = (
 
   const message = err instanceof Error ? err.message : 'Unknown error';
 
-  if (message.includes('duplicate key')) {
+  if (message.includes('duplicate key') || err.code === '23505') {
     return res.status(409).json({
       success: false,
       error: 'Order number already exists',

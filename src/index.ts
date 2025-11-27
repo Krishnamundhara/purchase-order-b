@@ -4,15 +4,16 @@ import session from 'express-session';
 import 'dotenv/config';
 import { testConnection, pool } from './db/connection.js';
 import { initializeDatabase } from './db/init.js';
+import passport from './middleware/passport.js';
 import purchaseOrderRoutes from './routes/purchaseOrders.js';
 import companyRoutes from './routes/company.js';
 import authRoutes from './routes/auth.js';
-import passport from './middleware/passport.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 const NODE_ENV = process.env.NODE_ENV || 'development';
+const SESSION_SECRET = process.env.SESSION_SECRET || 'your-secret-key-change-in-production';
 
 // CORS configuration
 const allowedOrigins = [
@@ -40,15 +41,15 @@ app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Session configuration
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
+  secret: SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: NODE_ENV === 'production',
     httpOnly: true,
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
-    sameSite: 'lax',
-  },
+    sameSite: 'lax'
+  }
 }));
 
 // Passport initialization

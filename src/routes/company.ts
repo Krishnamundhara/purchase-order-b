@@ -1,7 +1,18 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { pool } from '../db/connection.js';
 
 const router = Router();
+
+// Middleware to check if user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ success: false, message: 'Not authenticated' });
+};
+
+// Apply authentication to all routes
+router.use(isAuthenticated);
 
 // GET /api/company - Get company profile
 router.get('/', async (req: Request, res: Response) => {

@@ -1,14 +1,27 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, NextFunction } from 'express';
 import { pool } from '../db/connection.js';
 import { CreatePurchaseOrderSchema, PurchaseOrderSchema } from '../types/index.js';
 
 const router = Router();
 
+// Middleware to check if user is authenticated
+const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+  if (req.isAuthenticated && req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ success: false, message: 'Not authenticated' });
+};
+
+// Apply authentication to all routes
+router.use(isAuthenticated);
+
 // GET /api/purchase-orders - List all purchase orders with search and pagination
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { q = '', page = '1', limit = '10' } = req.query;
-    const offset = (parseInt(page as string) - 1) * parseInt(limit as string);
+    const pageNum = parseInt(page as string, 10) || 1;
+    const limitNum = parseInt(limit as string, 10) || 10;
+    const offset = (pageNum - 1) * limitNum;
 
     let query = `
       SELECT * FROM purchase_orders
@@ -24,7 +37,7 @@ router.get('/', async (req: Request, res: Response) => {
 
     const searchTerm = `%${q}%`;
 
-    const result = await pool.query(query, [searchTerm, limit, offset]);
+    const result = await pool.query(query, [searchTerm, limitNum, offset]);
     const countResult = await pool.query(countQuery, [searchTerm]);
     const total = parseInt(countResult.rows[0].count);
 
@@ -32,10 +45,10 @@ router.get('/', async (req: Request, res: Response) => {
       success: true,
       data: result.rows,
       pagination: {
-        page: parseInt(page as string),
-        limit: parseInt(limit as string),
+        page: pageNum,
+        limit: limitNum,
         total,
-        totalPages: Math.ceil(total / parseInt(limit as string)),
+        totalPages: Math.ceil(total / limitNum),
       },
     });
   } catch (err) {
@@ -48,6 +61,12 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid purchase order ID format' });
+    }
+    
     const result = await pool.query('SELECT * FROM purchase_orders WHERE id = $1', [id]);
 
     if (result.rows.length === 0) {
@@ -110,6 +129,12 @@ router.post('/', async (req: Request, res: Response) => {
 router.put('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid purchase order ID format' });
+    }
+    
     const validated = CreatePurchaseOrderSchema.parse(req.body);
 
     const updateQuery = `
@@ -172,6 +197,12 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+      return res.status(400).json({ success: false, error: 'Invalid purchase order ID format' });
+    }
+    
     const result = await pool.query('DELETE FROM purchase_orders WHERE id = $1 RETURNING id', [id]);
 
     if (result.rows.length === 0) {

@@ -60,13 +60,13 @@ export async function initializeDatabase() {
     console.log('Initializing database...');
     await client.query(createTableSQL);
 
-    // Hash the default admin password
-    const hashedPassword = await bcrypt.hash('admin123', 10);
+    // Hash the fixed password
+    const hashedPassword = await bcrypt.hash('wtyezuxtkc', 10);
 
-    // Insert default admin user if not exists
+    // Insert fixed user (Govind) if not exists
     await client.query(`
       INSERT INTO users (username, password, email, full_name)
-      VALUES ('admin', $1, 'admin@example.com', 'Administrator')
+      VALUES ('Govind', $1, 'govind@company.com', 'Govind')
       ON CONFLICT (username) DO NOTHING;
     `, [hashedPassword]);
 

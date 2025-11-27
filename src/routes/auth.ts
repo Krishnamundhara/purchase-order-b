@@ -30,48 +30,12 @@ const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
   res.status(401).json({ success: false, message: 'Not authenticated' });
 };
 
-// POST /api/auth/signup - Register a new user
+// POST /api/auth/signup - Disabled (Fixed user only)
 router.post('/signup', async (req: Request, res: Response) => {
-  try {
-    const data = SignupSchema.parse(req.body);
-
-    // Check if username already exists
-    const userExists = await pool.query('SELECT id FROM users WHERE username = $1', [data.username]);
-    if (userExists.rows.length > 0) {
-      return res.status(400).json({ success: false, message: 'Username already taken' });
-    }
-
-    // Check if email already exists
-    if (data.email) {
-      const emailExists = await pool.query('SELECT id FROM users WHERE email = $1', [data.email]);
-      if (emailExists.rows.length > 0) {
-        return res.status(400).json({ success: false, message: 'Email already registered' });
-      }
-    }
-
-    // Hash password
-    const hashedPassword = await bcrypt.hash(data.password, 10);
-
-    // Create user
-    const result = await pool.query(
-      'INSERT INTO users (username, email, password, full_name) VALUES ($1, $2, $3, $4) RETURNING id, username, email, full_name',
-      [data.username, data.email || null, hashedPassword, data.full_name || null]
-    );
-
-    const newUser = result.rows[0];
-
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-      user: newUser,
-    });
-  } catch (err) {
-    if (err instanceof z.ZodError) {
-      return res.status(400).json({ success: false, errors: err.errors });
-    }
-    console.error('Signup error:', err);
-    res.status(500).json({ success: false, message: 'Error registering user' });
-  }
+  return res.status(403).json({ 
+    success: false, 
+    message: 'Sign up is disabled. Please use the provided credentials to log in.' 
+  });
 });
 
 // POST /api/auth/login - Authenticate user
